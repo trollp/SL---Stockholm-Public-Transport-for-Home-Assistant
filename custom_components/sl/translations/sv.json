@@ -1,0 +1,81 @@
+{
+  "config": {
+    "step": {
+      "search": {
+        "title": "Hitta din hållplats",
+        "description": "Sök efter en hållplats (t.ex. 'Centralstationen', 'Stadshuset')",
+        "data": {
+          "query": "Hållplatsnamn"
+        }
+      },
+      "select": {
+        "title": "Välj hållplats",
+        "description": "Välj den hållplats du vill övervaka",
+        "data": {
+          "site_id": "Hållplats"
+        }
+      },
+      "routes": {
+        "title": "Välj linjer",
+        "description": "Välj vilka linje- och riktningskombinationer du vill bevaka. Endast avgångar som matchar ditt val visas.",
+        "data": {
+          "routes": "Linjer att bevaka"
+        }
+      },
+      "options": {
+        "title": "Visningsinställningar",
+        "description": "Ställ in hur många avgångar som visas och hur långt framåt som kontrolleras",
+        "data": {
+          "departures_count": "Antal avgångar att visa",
+          "forecast": "Minuter framåt att kontrollera"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Kan inte ansluta till SL API. Kontrollera din internetanslutning.",
+      "no_stops_found": "Inga hållplatser hittades. Försök med ett annat sökord.",
+      "invalid_stop": "Ogiltig hållplats vald.",
+      "unknown": "Oväntat fel. Försök igen."
+    },
+    "abort": {
+      "already_configured": "Denna hållplats är redan konfigurerad."
+    }
+  },
+  "options": {
+    "step": {
+      "routes": {
+        "title": "Välj linjer",
+        "description": "Välj vilka linje- och riktningskombinationer du vill bevaka. Endast avgångar som matchar ditt val visas.",
+        "data": {
+          "routes": "Linjer att bevaka"
+        }
+      },
+      "options": {
+        "title": "Visningsinställningar",
+        "data": {
+          "departures_count": "Antal avgångar att visa",
+          "forecast": "Minuter framåt att kontrollera"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "next_departure": {
+        "name": "Nästa avgång"
+      },
+      "departures": {
+        "name": "Avgångar"
+      },
+      "status": {
+        "name": "Status",
+        "state": {
+          "normal": "Normal",
+          "delayed": "Försenad",
+          "cancelled": "Inställd",
+          "unknown": "Okänd"
+        }
+      }
+    }
+  }
+}

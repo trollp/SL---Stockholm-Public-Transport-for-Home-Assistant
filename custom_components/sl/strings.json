@@ -1,0 +1,81 @@
+{
+  "config": {
+    "step": {
+      "search": {
+        "title": "Find your stop",
+        "description": "Search for a stop by name (e.g. 'Central Station', 'Town Hall')",
+        "data": {
+          "query": "Stop name"
+        }
+      },
+      "select": {
+        "title": "Select stop",
+        "description": "Choose the stop you want to monitor",
+        "data": {
+          "site_id": "Stop"
+        }
+      },
+      "routes": {
+        "title": "Select routes",
+        "description": "Choose which line + direction combinations to monitor. Only departures matching your selection will be shown.",
+        "data": {
+          "routes": "Routes to monitor"
+        }
+      },
+      "options": {
+        "title": "Display options",
+        "description": "Configure how many departures to show and how far ahead to look",
+        "data": {
+          "departures_count": "Number of departures to show",
+          "forecast": "Minutes ahead to check"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to the SL API. Check your internet connection.",
+      "no_stops_found": "No stops found. Try a different search term.",
+      "invalid_stop": "Invalid stop selected.",
+      "unknown": "Unexpected error. Please try again."
+    },
+    "abort": {
+      "already_configured": "This stop is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "routes": {
+        "title": "Select routes",
+        "description": "Choose which line + direction combinations to monitor. Only departures matching your selection will be shown.",
+        "data": {
+          "routes": "Routes to monitor"
+        }
+      },
+      "options": {
+        "title": "Display options",
+        "data": {
+          "departures_count": "Number of departures to show",
+          "forecast": "Minutes ahead to check"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "next_departure": {
+        "name": "Next Departure"
+      },
+      "departures": {
+        "name": "Departures"
+      },
+      "status": {
+        "name": "Status",
+        "state": {
+          "normal": "Normal",
+          "delayed": "Delayed",
+          "cancelled": "Cancelled",
+          "unknown": "Unknown"
+        }
+      }
+    }
+  }
+}
