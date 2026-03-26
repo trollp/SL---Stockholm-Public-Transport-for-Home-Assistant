@@ -1,13 +1,13 @@
 {
   "domain": "sl",
-  "name": "SL — Stockholm Public Transport",
-  "version": "1.0.0",
-  "documentation": "https://github.com/trollp/SL---Stockholm-Public-Transport-for-Home-Assistant",
-  "issue_tracker": "https://github.com/trollp/SL---Stockholm-Public-Transport-for-Home-Assistant/issues",
-  "dependencies": [],
+  "name": "SL \u2014 Stockholm Public Transport",
   "codeowners": ["@trollp"],
-  "requirements": [],
-  "iot_class": "cloud_polling",
   "config_flow": true,
-  "quality_scale": "bronze"
+  "dependencies": [],
+  "documentation": "https://github.com/trollp/SL---Stockholm-Public-Transport-for-Home-Assistant",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/trollp/SL---Stockholm-Public-Transport-for-Home-Assistant/issues",
+  "quality_scale": "bronze",
+  "requirements": [],
+  "version": "1.0.0"
 }
