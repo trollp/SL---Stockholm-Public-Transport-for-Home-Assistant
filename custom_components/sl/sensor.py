@@ -35,8 +35,10 @@ async def async_setup_entry(
     """Set up SL sensor entities from a config entry."""
     coordinator: SLDepartureCoordinator = entry.runtime_data
     stop_name = coordinator.stop_name
-    transport = entry.data.get(CONF_TRANSPORT, TRANSPORT_ALL)
-    departures_count = entry.data.get(CONF_DEPARTURES_COUNT, 3)
+    # Merge data + options so options-flow overrides take effect
+    config = {**entry.data, **entry.options}
+    transport = config.get(CONF_TRANSPORT, TRANSPORT_ALL)
+    departures_count = config.get(CONF_DEPARTURES_COUNT, 3)
 
     entities = [
         SLNextDepartureSensor(coordinator, entry, stop_name, transport),
@@ -44,7 +46,8 @@ async def async_setup_entry(
         SLStatusSensor(coordinator, entry, stop_name),
     ]
 
-    async_add_entities(entities, update_before_add=True)
+    # update_before_add=False — coordinator already refreshed in async_setup_entry
+    async_add_entities(entities, update_before_add=False)
 
 
 def _get_icon(transport: str) -> str:

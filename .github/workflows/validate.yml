@@ -37,6 +37,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          pip install pytest aiohttp
+          pip install pytest aiohttp homeassistant
       - name: Run tests
         run: pytest tests/ -v
