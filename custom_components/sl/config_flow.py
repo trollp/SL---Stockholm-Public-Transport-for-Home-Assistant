@@ -61,7 +61,7 @@ async def _fetch_route_options(hass, site_id: int) -> list[SelectOptionDict]:
 
     options: list[SelectOptionDict] = []
     # Sort by transport_mode, then line (numeric where possible), then direction_code
-    def sort_key(k):
+    def sort_key(k: tuple[str, str, int]) -> tuple[str, int, str, int]:
         mode, line, dc = k
         try:
             line_num = int(line)
@@ -90,6 +90,7 @@ class SLConfigFlow(ConfigFlow, domain=DOMAIN):
         self._stops: list[Stop] = []
         self._selected_stop: Stop | None = None
         self._route_options: list[SelectOptionDict] = []
+        self._pending_routes: list[str] = []
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None

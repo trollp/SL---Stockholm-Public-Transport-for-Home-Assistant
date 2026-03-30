@@ -59,16 +59,20 @@ class SLDepartureCoordinator(DataUpdateCoordinator[list[Departure]]):
 
         if self.routes:
             route_set = set(self.routes)
-            # If all selected routes have direction_code 0, fall back to line-only matching
-            all_zero_dc = all(r.endswith("|0") for r in self.routes)
-            if all_zero_dc:
-                line_set = {r.split("|")[0] for r in self.routes}
-                departures = [d for d in departures if d.line in line_set]
-            else:
-                departures = [
-                    d for d in departures
-                    if f"{d.line}|{d.direction_code}" in route_set
-                ]
+            # Validate route format: should be "line|direction_code"
+            valid_routes = [r for r in self.routes if "|" in r]
+            if valid_routes:
+                route_set = set(valid_routes)
+                # If all selected routes have direction_code 0, fall back to line-only matching
+                all_zero_dc = all(r.endswith("|0") for r in valid_routes)
+                if all_zero_dc:
+                    line_set = {r.split("|")[0] for r in valid_routes}
+                    departures = [d for d in departures if d.line in line_set]
+                else:
+                    departures = [
+                        d for d in departures
+                        if f"{d.line}|{d.direction_code}" in route_set
+                    ]
 
         return departures
 

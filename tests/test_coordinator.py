@@ -1,13 +1,21 @@
 """Tests for SLDepartureCoordinator route filtering and properties."""
 import sys
 import os
+import asyncio
+import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from unittest.mock import AsyncMock, MagicMock
 
-from custom_components.sl.api import Departure, _parse_datetime
+from custom_components.sl.api import (
+    Departure,
+    SLApiConnectionError,
+    SLApiRateLimitError,
+    _parse_datetime,
+)
 from custom_components.sl.coordinator import SLDepartureCoordinator
+from homeassistant.helpers.update_coordinator import UpdateFailed
 
 
 # ---------------------------------------------------------------------------
@@ -164,3 +172,106 @@ class TestCoordinatorProperties:
     def test_has_disruptions_true_when_cancelled(self):
         coord = self._coord([make_dep("172", 1, state="CANCELLED")])
         assert coord.has_disruptions is True
+
+
+# ---------------------------------------------------------------------------
+# Coordinator _async_update_data() tests
+# ---------------------------------------------------------------------------
+
+class TestCoordinatorAsyncUpdateData:
+    def test_filtering_applied(self):
+        """Test that route filtering is applied to departures."""
+        async def run_test():
+            hass = MagicMock()
+            client = MagicMock()
+            departures = [
+                make_dep("172", 1, "Skarpnäck"),
+                make_dep("172", 2, "Hallunda"),
+                make_dep("744", 1, "Högdalen"),
+            ]
+            client.get_departures = AsyncMock(return_value=departures)
+
+            coord = SLDepartureCoordinator(
+                hass=hass,
+                client=client,
+                site_id=7067,
+                stop_name="Test Stop",
+                forecast=60,
+                routes=["172|1"],
+            )
+
+            result = await coord._async_update_data()
+            assert len(result) == 1
+            assert result[0].destination == "Skarpnäck"
+
+        asyncio.run(run_test())
+
+    def test_connection_error_raises_update_failed(self):
+        """Test that connection error is converted to UpdateFailed."""
+        async def run_test():
+            hass = MagicMock()
+            client = MagicMock()
+            client.get_departures = AsyncMock(
+                side_effect=SLApiConnectionError("Cannot connect")
+            )
+
+            coord = SLDepartureCoordinator(
+                hass=hass,
+                client=client,
+                site_id=7067,
+                stop_name="Test Stop",
+                forecast=60,
+            )
+
+            with pytest.raises(UpdateFailed, match="Cannot connect to SL API"):
+                await coord._async_update_data()
+
+        asyncio.run(run_test())
+
+    def test_rate_limit_error_raises_update_failed(self):
+        """Test that rate limit error is converted to UpdateFailed."""
+        async def run_test():
+            hass = MagicMock()
+            client = MagicMock()
+            client.get_departures = AsyncMock(
+                side_effect=SLApiRateLimitError("Rate limited")
+            )
+
+            coord = SLDepartureCoordinator(
+                hass=hass,
+                client=client,
+                site_id=7067,
+                stop_name="Test Stop",
+                forecast=60,
+            )
+
+            with pytest.raises(UpdateFailed, match="SL API rate limited"):
+                await coord._async_update_data()
+
+        asyncio.run(run_test())
+
+    def test_no_routes_returns_all_departures(self):
+        """Test that without routes, all departures are returned."""
+        async def run_test():
+            hass = MagicMock()
+            client = MagicMock()
+            departures = [
+                make_dep("172", 1),
+                make_dep("172", 2),
+                make_dep("744", 1),
+            ]
+            client.get_departures = AsyncMock(return_value=departures)
+
+            coord = SLDepartureCoordinator(
+                hass=hass,
+                client=client,
+                site_id=7067,
+                stop_name="Test Stop",
+                forecast=60,
+                routes=[],
+            )
+
+            result = await coord._async_update_data()
+            assert len(result) == 3
+
+        asyncio.run(run_test())

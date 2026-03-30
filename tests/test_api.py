@@ -1,6 +1,8 @@
 """Tests for the SL API client."""
 import sys
 import os
+import asyncio
+import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -13,6 +15,7 @@ from custom_components.sl.api import (
     SLApiClient,
     SLApiConnectionError,
     SLApiError,
+    SLApiRateLimitError,
     _parse_departure,
     _parse_site_id,
     _parse_stop,
@@ -188,3 +191,155 @@ class TestParseStop:
         stop = _parse_stop(raw)
         assert stop is not None
         assert stop.site_id == 0
+
+
+# ---------------------------------------------------------------------------
+# SLApiClient.get_departures()
+# ---------------------------------------------------------------------------
+
+class TestSLApiClientGetDepartures:
+    def test_happy_path(self):
+        """Test successful departure fetch."""
+        async def run_test():
+            session = MagicMock()
+            response = MagicMock()
+            response.status = 200
+            response.content.read = AsyncMock(return_value=b'{"departures":[{"line":{"designation":"726","transport_mode":"BUS"},"destination":"Test","display":"3min","scheduled":"2026-03-21T07:42:00","expected":"2026-03-21T07:42:00","state":"EXPECTED","journey":{"state":"NORMALPROGRESS"}}]}')
+            session.get.return_value.__aenter__.return_value = response
+
+            client = SLApiClient(session)
+            departures = await client.get_departures(7067)
+
+            assert len(departures) == 1
+            assert departures[0].line == "726"
+            assert departures[0].destination == "Test"
+
+        asyncio.run(run_test())
+
+    def test_rate_limit_error_429(self):
+        """Test 429 response raises SLApiRateLimitError."""
+        async def run_test():
+            session = MagicMock()
+            response = MagicMock()
+            response.status = 429
+            session.get.return_value.__aenter__.return_value = response
+
+            client = SLApiClient(session)
+            with pytest.raises(SLApiRateLimitError):
+                await client.get_departures(7067)
+
+        asyncio.run(run_test())
+
+    def test_http_error_500(self):
+        """Test 500 response raises SLApiError."""
+        async def run_test():
+            session = MagicMock()
+            response = MagicMock()
+            response.status = 500
+            session.get.return_value.__aenter__.return_value = response
+
+            client = SLApiClient(session)
+            with pytest.raises(SLApiError, match="500"):
+                await client.get_departures(7067)
+
+        asyncio.run(run_test())
+
+    def test_connection_error(self):
+        """Test aiohttp connection error raises SLApiConnectionError."""
+        async def run_test():
+            import aiohttp
+            session = MagicMock()
+            session.get.side_effect = aiohttp.ClientConnectionError()
+
+            client = SLApiClient(session)
+            with pytest.raises(SLApiConnectionError, match="Cannot connect"):
+                await client.get_departures(7067)
+
+        asyncio.run(run_test())
+
+    def test_response_exceeds_max_bytes(self):
+        """Test oversized response raises SLApiError."""
+        async def run_test():
+            from custom_components.sl.const import MAX_RESPONSE_BYTES
+            session = MagicMock()
+            response = MagicMock()
+            response.status = 200
+            # Return more than MAX_RESPONSE_BYTES
+            oversized = b'x' * (MAX_RESPONSE_BYTES + 1)
+            response.content.read = AsyncMock(return_value=oversized)
+            session.get.return_value.__aenter__.return_value = response
+
+            client = SLApiClient(session)
+            with pytest.raises(SLApiError, match="exceeded size limit"):
+                await client.get_departures(7067)
+
+        asyncio.run(run_test())
+
+    def test_invalid_json(self):
+        """Test invalid JSON response raises SLApiError."""
+        async def run_test():
+            session = MagicMock()
+            response = MagicMock()
+            response.status = 200
+            response.content.read = AsyncMock(return_value=b'{invalid json}')
+            session.get.return_value.__aenter__.return_value = response
+
+            client = SLApiClient(session)
+            with pytest.raises(SLApiError, match="invalid JSON"):
+                await client.get_departures(7067)
+
+        asyncio.run(run_test())
+
+
+# ---------------------------------------------------------------------------
+# SLApiClient.find_stops()
+# ---------------------------------------------------------------------------
+
+class TestSLApiClientFindStops:
+    def test_happy_path(self):
+        """Test successful stop search."""
+        async def run_test():
+            session = MagicMock()
+            response = MagicMock()
+            response.status = 200
+            response.content.read = AsyncMock(return_value=b'{"locations":[{"name":"Test Stop","properties":{"stopId":"18007067"},"productClasses":[5]}]}')
+            session.get.return_value.__aenter__.return_value = response
+
+            client = SLApiClient(session)
+            stops = await client.find_stops("Test")
+
+            assert len(stops) == 1
+            assert stops[0].name == "Test Stop"
+            assert stops[0].site_id == 7067
+
+        asyncio.run(run_test())
+
+    def test_empty_locations(self):
+        """Test empty locations list."""
+        async def run_test():
+            session = MagicMock()
+            response = MagicMock()
+            response.status = 200
+            response.content.read = AsyncMock(return_value=b'{"locations":[]}')
+            session.get.return_value.__aenter__.return_value = response
+
+            client = SLApiClient(session)
+            stops = await client.find_stops("Nowhere")
+
+            assert len(stops) == 0
+
+        asyncio.run(run_test())
+
+    def test_http_error(self):
+        """Test non-200 response raises SLApiError."""
+        async def run_test():
+            session = MagicMock()
+            response = MagicMock()
+            response.status = 404
+            session.get.return_value.__aenter__.return_value = response
+
+            client = SLApiClient(session)
+            with pytest.raises(SLApiError, match="404"):
+                await client.find_stops("Test")
+
+        asyncio.run(run_test())

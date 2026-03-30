@@ -243,10 +243,11 @@ class SLApiClient:
             raise SLApiError(f"SL API returned invalid JSON: {err}") from err
 
         departures = []
-        for raw in data.get("departures", []):
-            dep = _parse_departure(raw)
-            if dep is not None:
-                departures.append(dep)
+        if isinstance(data, dict):
+            for raw in data.get("departures", []):
+                dep = _parse_departure(raw)
+                if dep is not None:
+                    departures.append(dep)
 
         return departures
 
@@ -274,10 +275,11 @@ class SLApiClient:
             raise SLApiError(f"Stop finder returned invalid JSON: {err}") from err
 
         stops = []
-        for raw in data.get("locations", []):
-            stop = _parse_stop(raw)
-            if stop is not None and stop.site_id > 0:
-                stops.append(stop)
+        if isinstance(data, dict):
+            for raw in data.get("locations", []):
+                stop = _parse_stop(raw)
+                if stop is not None and stop.site_id > 0:
+                    stops.append(stop)
 
         # Deduplicate by site_id
         seen: set[int] = set()

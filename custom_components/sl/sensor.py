@@ -135,14 +135,14 @@ class SLDeparturesSensor(SLBaseSensor):
     @property
     def native_value(self) -> int:
         """Return number of upcoming departures."""
-        if not self.coordinator.data:
+        if not self.coordinator.data or not isinstance(self.coordinator.data, list):
             return 0
         return len(self.coordinator.data[: self._departures_count])
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return extra state attributes."""
-        data = self.coordinator.data or []
+        data = self.coordinator.data if isinstance(self.coordinator.data, list) else []
         shown = data[: self._departures_count]
 
         # Build a clean summary string for TTS
@@ -207,7 +207,7 @@ class SLStatusSensor(SLBaseSensor):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return issues list."""
-        data = self.coordinator.data or []
+        data = self.coordinator.data if isinstance(self.coordinator.data, list) else []
         issues = []
         for dep in data:
             if dep.is_cancelled:

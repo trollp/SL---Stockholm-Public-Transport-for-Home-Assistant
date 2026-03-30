@@ -19,6 +19,27 @@ A Home Assistant integration for real-time SL (Storstockholms Lokaltrafik) depar
   - **Status** — overall line status (normal / delayed / cancelled)
 - Configurable forecast window and departure count
 
+## How it works
+
+The integration creates three sensors for each SL stop you add:
+
+1. **Next Departure** (`sensor.sl_[stop]_next_departure`)
+   - Shows the next upcoming departure as a formatted string (`"Nu"`, `"8 min"`, `"08:42"`)
+   - Attributes include full details: line, destination, expected time, delays, cancellations
+   - Example: `state: "3 min"` with attributes `line: "726"`, `destination: "Fridhemsplan"`, `delay_minutes: 3`
+
+2. **Departures** (`sensor.sl_[stop]_departures`)
+   - State shows the count of upcoming departures within the forecast window
+   - Attributes include a `departures` array with all departures and a `next_departure` text string for TTS
+   - Example: `state: "3"` (3 departures available) with array of departure details
+
+3. **Status** (`sensor.sl_[stop]_status`)
+   - Overall health: `"normal"`, `"delayed"`, `"cancelled"`, or `"unknown"`
+   - Attributes include an `issues` list with specific problems (e.g. `"Line 726 08:42 → Fridhemsplan: delayed 3 min"`)
+   - Example: `state: "delayed"` when any departure is ≥ 2 min late
+
+**Data updates** every 30 seconds. The integration filters departures by optional transport mode (bus, metro, etc.) and line numbers you select during setup.
+
 ## Installation
 
 ### Via HACS (recommended)
@@ -85,6 +106,26 @@ departures:
 | `delayed` | One or more departures delayed ≥ 2 min |
 | `cancelled` | One or more departures cancelled |
 | `unknown` | No data available |
+
+## Troubleshooting
+
+### No departures showing (state is unknown)
+- **Check the stop ID**: Use the search during setup to find the exact stop. Typos or partial names may not find the correct SL stop.
+- **Check the forecast window**: Set it to at least 60 minutes during setup. If no departures are scheduled within your window, the sensor will show no data.
+- **Check SL API status**: The integration relies on Trafiklab's SL Transport API. If it's down, you'll see `"unknown"` state. Check `https://transport.integration.sl.se`.
+
+### Wrong stop selected
+- Re-run the integration config via Settings → Devices & Services → SL → Options.
+- Search again for the correct stop name. SL has many stops with similar names.
+
+### Direction filtering not working
+- Some lines serve multiple directions at the same stop (e.g., line 726 northbound vs southbound).
+- During setup, select the specific direction if offered. If you select **all directions** for a line, departures in all directions will show.
+- The integration matches both line number and direction code. If unsure, select "All" to see all departures, then refine later.
+
+### All departures showing as cancelled
+- Real SL disruptions can cause widespread cancellations. Check the [SL status page](https://www.sl.se/) or local transit news.
+- Verify your stop still has service during your selected forecast hours.
 
 ## Example Automations
 

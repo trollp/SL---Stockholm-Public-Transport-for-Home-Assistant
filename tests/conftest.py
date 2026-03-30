@@ -130,6 +130,11 @@ class _UpdateFailed(Exception):
 
 
 class _CoordinatorEntity:
+    """Minimal stand-in — supports CoordinatorEntity[T] syntax."""
+
+    def __class_getitem__(cls, _item):
+        return cls
+
     def __init__(self, coordinator):
         self.coordinator = coordinator
 
